@@ -18,43 +18,52 @@ def log(p, q):
     assert curve.is_on_curve(p)
     assert curve.is_on_curve(q)
 
+    # Calculate m = sqrt(n)
     sqrt_n = int(math.sqrt(curve.n)) + 1
 
-    # Compute the baby steps and store them in the 'precomputed' hash table.
-    r = None
+    print('Computing baby steps...................')
+    # Compute the baby steps (jP) and store them in the 'precomputed' hash table.
+    # The hash table is of size m with key-value pairs (jP, j). The table is indexed
+    # by jP (key) with the corresponding entry's value set to j.
+    jp = None
     precomputed = {None: 0}
+    for j in range(1, sqrt_n):
+        jp = curve.add(jp, p)
+        precomputed[jp] = j
 
-    for a in range(1, sqrt_n):
-        r = curve.add(r, p)
-        precomputed[r] = a
-
-    # Now compute the giant steps and check the hash table for any
-    # matching point.
-    r = q
+    # Now compute the giant steps (Q - mP) and check the hash table for any
+    # matching point. Here we precompute s = -mP 
+    print('Computing giant steps...................')
+    jp = q
+#    print('Multiply m = %d'%(sqrt_n))
+#    print('with negP = ', curve.neg(p))
     s = curve.mult(sqrt_n, curve.neg(p))
 
-    for b in range(sqrt_n):
+    for i in range(sqrt_n):
         try:
-            a = precomputed[r]
+            j = precomputed[jp]
         except KeyError:
             pass
         else:
-            steps = sqrt_n + b
-            logarithm = a + sqrt_n * b
+            steps = sqrt_n + i
+            logarithm = j + sqrt_n * i
             return logarithm, steps
 
-        r = curve.add(r, s)
+        jp = curve.add(jp, s)
 
     raise AssertionError('logarithm not found')
 
 
 def main():
+    # Use a random number x to compute Q. Later we will use this 
+    # number x to check our result y from y = log(P, Q).
     x = random.randrange(1, curve.n)
-    p = curve.g
-    q = curve.mult(x, p)
-
     print('Curve: {}'.format(curve))
     print('Curve order: {}'.format(curve.n))
+    print('Random x = %d'%(x))
+
+    p = curve.g
+    q = curve.mult(x, p)
     print('p = (0x{:x}, 0x{:x})'.format(*p))
     print('q = (0x{:x}, 0x{:x})'.format(*q))
     print(x, '* p = q')
@@ -63,6 +72,9 @@ def main():
     print('log(p, q) =', y)
     print('Took', steps, 'steps')
 
+    # If x (the random number we chose) is equal to y
+    # (the result of the baby-step, giant-step alg), then
+    # our algorithm worked
     assert x == y
 
 

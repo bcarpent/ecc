@@ -32,6 +32,8 @@ class EllipticCurve:
         assert self.is_on_curve(point1)
         assert self.is_on_curve(point2)
 
+#        print('Adding ', point1, '+', point2)
+
         if point1 is None:
             return point2
         if point2 is None:
@@ -48,10 +50,17 @@ class EllipticCurve:
         else:
             m = (y1 - y2) * inverse_mod(x1 - x2, self.p)
 
+#        print('Slope = ', m)
+
         x3 = m * m - x1 - x2
         y3 = y1 + m * (x3 - x1)
+
+#        print('Sum before mod = ', x3, -y3)
+
         result = (x3 % self.p,
                   -y3 % self.p)
+
+#        print("Sum = ", result)
 
         assert self.is_on_curve(result)
 
@@ -87,9 +96,12 @@ class EllipticCurve:
         while n:
             if n & 1:
                 result = self.add(result, addend)
+#                print('result = ', result)
             addend = self.double(addend)
+#            print('addend = ', addend)
             n >>= 1
 
+#        print('Product = ', result)
         return result
 
     def __str__(self):
